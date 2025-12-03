@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
+import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
 import { existsSync } from 'fs';
@@ -34,12 +35,24 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization'],
   });
 
+  // Global exception filter for better error handling
+  app.useGlobalFilters(new AllExceptionsFilter());
+
   // Global validation pipe
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
       forbidNonWhitelisted: true,
       transform: true,
+      exceptionFactory: (errors) => {
+        const messages = errors.map((error) =>
+          Object.values(error.constraints || {}).join(', '),
+        );
+        return new HttpException(
+          { message: messages.join('; ') },
+          HttpStatus.BAD_REQUEST,
+        );
+      },
     }),
   );
 
