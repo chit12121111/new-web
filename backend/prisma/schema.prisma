@@ -1,0 +1,260 @@
+// This is your Prisma schema file
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  GUEST
+  TRYOUT
+  FREE
+  BASIC
+  PRO
+  ADMIN
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  INACTIVE
+  CANCELLED
+  EXPIRED
+  TRIALING
+}
+
+enum ContentType {
+  SEO_ARTICLE
+  REEL_SCRIPT
+}
+
+model User {
+  id                String        @id @default(uuid())
+  email             String        @unique
+  password          String
+  firstName         String?
+  lastName          String?
+  role              UserRole      @default(FREE)
+  
+  // Credits
+  seoCredits        Int           @default(0)
+  reelCredits       Int           @default(0)
+  
+  // Try-out specific
+  tryoutStartDate   DateTime?
+  tryoutEndDate     DateTime?
+  
+  // Stripe
+  stripeCustomerId  String?       @unique
+  
+  // API Keys (encrypted in production)
+  googleGeminiApiKey String?      // Google Gemini API key
+  openaiApiKey      String?       // OpenAI API key
+  huggingfaceApiKey String?       // Hugging Face API key
+  
+  // Selected Models
+  selectedGeminiModel String?     // Selected Google Gemini model (e.g., models/gemini-2.0-flash)
+  selectedOpenAIModel String?     // Selected OpenAI model (e.g., gpt-4)
+  selectedHuggingfaceModel String? // Selected Hugging Face model
+  
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  
+  // Relations
+  subscription      Subscription?
+  contents          Content[]
+  refreshTokens     RefreshToken[]
+  payments          Payment[]
+  templatePurchases TemplatePurchase[]
+  
+  @@index([email])
+  @@index([role])
+  @@index([stripeCustomerId])
+}
+
+model Subscription {
+  id                    String              @id @default(uuid())
+  userId                String              @unique
+  user                  User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  planType              UserRole            // FREE, BASIC, PRO
+  status                SubscriptionStatus  @default(INACTIVE)
+  
+  // Stripe
+  stripeSubscriptionId  String?             @unique
+  stripePriceId         String?
+  stripeProductId       String?
+  
+  // Billing
+  currentPeriodStart    DateTime?
+  currentPeriodEnd      DateTime?
+  cancelAtPeriodEnd     Boolean             @default(false)
+  
+  // Credits tracking
+  monthlySeoCredits     Int                 @default(0)
+  monthlyReelCredits    Int                 @default(0)
+  
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+  
+  @@index([userId])
+  @@index([stripeSubscriptionId])
+}
+
+model Plan {
+  id                String    @id @default(uuid())
+  name              String    @unique  // FREE, BASIC, PRO
+  displayName       String
+  description       String?
+  
+  price             Float     @default(0)
+  currency          String    @default("usd")
+  
+  // Stripe
+  stripePriceId     String?   @unique
+  stripeProductId   String?   @unique
+  
+  // Credits
+  monthlySeoCredits Int       @default(0)
+  monthlyReelCredits Int      @default(0)
+  
+  // Features
+  features          Json?     // Array of feature strings
+  
+  isActive          Boolean   @default(true)
+  sortOrder         Int       @default(0)
+  
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  @@index([name])
+}
+
+model Content {
+  id          String      @id @default(uuid())
+  userId      String
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  type        ContentType
+  title       String
+  content     String      @db.Text
+  prompt      String?     @db.Text
+  
+  // Metadata
+  metadata    Json?       // Store additional data like keywords, duration, etc.
+  
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  
+  @@index([userId])
+  @@index([type])
+  @@index([createdAt])
+}
+
+model RefreshToken {
+  id          String    @id @default(uuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  token       String    @unique
+  expiresAt   DateTime
+  
+  createdAt   DateTime  @default(now())
+  
+  @@index([userId])
+  @@index([token])
+}
+
+model Payment {
+  id                  String    @id @default(uuid())
+  userId              String
+  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Stripe
+  stripePaymentId     String    @unique
+  stripeInvoiceId     String?
+  
+  amount              Float
+  currency            String    @default("usd")
+  status              String    // succeeded, failed, pending
+  
+  description         String?
+  metadata            Json?
+  
+  createdAt           DateTime  @default(now())
+  
+  @@index([userId])
+  @@index([stripePaymentId])
+  @@index([createdAt])
+}
+
+model WebhookLog {
+  id          String    @id @default(uuid())
+  
+  eventType   String
+  eventId     String    @unique
+  payload     Json
+  
+  processed   Boolean   @default(false)
+  error       String?   @db.Text
+  
+  createdAt   DateTime  @default(now())
+  
+  @@index([eventType])
+  @@index([processed])
+  @@index([createdAt])
+}
+
+model AIPromptTemplate {
+  id          String      @id @default(uuid())
+  
+  type        ContentType
+  name        String
+  template    String      @db.Text
+  description String?     @db.Text
+  thumbnail   String?     // URL to thumbnail image
+  
+  // Pricing
+  isPaid      Boolean     @default(false)
+  price       Float       @default(0) // Price in credits
+  priceType   String      @default("credits") // "credits" or "money"
+  
+  // Metadata
+  category    String?
+  tags        String[]    @default([])
+  
+  isActive    Boolean     @default(true)
+  
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  
+  // Relations
+  purchases   TemplatePurchase[]
+  
+  @@index([type])
+  @@index([isPaid])
+  @@index([isActive])
+}
+
+model TemplatePurchase {
+  id          String      @id @default(uuid())
+  userId      String
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  templateId  String
+  template    AIPromptTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  
+  // Payment info
+  price       Float
+  paymentType String      // "credits" or "money"
+  creditsUsed Int?        // If paid with credits
+  
+  createdAt   DateTime    @default(now())
+  
+  @@unique([userId, templateId])
+  @@index([userId])
+  @@index([templateId])
+  @@index([createdAt])
+}
+
