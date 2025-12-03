@@ -77,6 +77,32 @@ export class AdminController {
     return this.adminService.deleteContent(id);
   }
 
+  // Templates Management
+  @Get('templates')
+  async getTemplates() {
+    return this.adminService.getPromptTemplates();
+  }
+
+  @Get('templates/:id')
+  async getTemplateById(@Param('id') id: string) {
+    return this.adminService.getPromptTemplateById(id);
+  }
+
+  @Post('templates')
+  async createTemplate(@Body() templateData: any) {
+    return this.adminService.createPromptTemplate(templateData);
+  }
+
+  @Put('templates/:id')
+  async updateTemplate(@Param('id') id: string, @Body() templateData: any) {
+    return this.adminService.updatePromptTemplate(id, templateData);
+  }
+
+  @Delete('templates/:id')
+  async deleteTemplate(@Param('id') id: string) {
+    return this.adminService.deletePromptTemplate(id);
+  }
+
   // Seed Data (No auth required for initial setup)
   @Post('seed')
   async seedData() {
