@@ -25,14 +25,32 @@ RUN echo "🔍 Checking NestJS CLI:" && \
 
 # Build application (with verbose output and error handling)
 RUN echo "🔨 Starting build..." && \
-    (npm run build 2>&1 | tee /tmp/build.log || \
-     (echo "⚠️ npm run build failed, trying tsc directly..." && \
-      npx tsc && \
-      echo "✅ tsc build completed")) && \
-    echo "✅ Build command completed" && \
+    echo "📦 npm version:" && npm --version && \
+    echo "📦 node version:" && node --version && \
+    echo "📦 Checking if @nestjs/cli is installed:" && \
+    (npm list @nestjs/cli || echo "⚠️ @nestjs/cli not found in node_modules") && \
+    echo "🔨 Running npm run build..." && \
+    npm run build 2>&1 | tee /tmp/build.log && \
+    BUILD_EXIT_CODE=${PIPESTATUS[0]} && \
+    if [ $BUILD_EXIT_CODE -ne 0 ]; then \
+        echo "⚠️ npm run build failed with exit code $BUILD_EXIT_CODE" && \
+        echo "📄 Build log:" && cat /tmp/build.log && \
+        echo "⚠️ Trying tsc directly..." && \
+        npx tsc 2>&1 | tee /tmp/tsc.log && \
+        TSC_EXIT_CODE=${PIPESTATUS[0]} && \
+        if [ $TSC_EXIT_CODE -ne 0 ]; then \
+            echo "❌ tsc also failed with exit code $TSC_EXIT_CODE" && \
+            echo "📄 TSC log:" && cat /tmp/tsc.log && \
+            exit 1; \
+        else \
+            echo "✅ tsc build completed"; \
+        fi; \
+    else \
+        echo "✅ npm run build completed successfully"; \
+    fi && \
     echo "📁 Contents after build:" && ls -la && \
     echo "📁 Dist folder contents:" && (ls -la dist/ || echo "❌ dist/ folder does not exist!") && \
-    echo "📄 Build log:" && cat /tmp/build.log 2>/dev/null || echo "No build log"
+    echo "📄 Final build log:" && cat /tmp/build.log 2>/dev/null || echo "No build log"
 
 # Verify build output exists with detailed error
 RUN if [ ! -f dist/main.js ]; then \
@@ -68,12 +86,22 @@ COPY --from=builder /app/prisma ./prisma
 # Generate Prisma Client (needed at runtime)
 RUN npm run prisma:generate
 
-# Verify dist exists in final image
+# Verify dist exists in final image with detailed output
 RUN echo "🔍 Verifying dist in final image:" && \
-    ls -la && \
-    ls -la dist/ && \
-    test -f dist/main.js && echo "✅ dist/main.js exists!" || \
-    (echo "❌ ERROR: dist/main.js not found in final image!" && exit 1)
+    echo "📁 Current directory:" && pwd && \
+    echo "📁 Contents:" && ls -la && \
+    echo "📁 Dist folder:" && (ls -la dist/ 2>/dev/null || echo "❌ dist/ folder does not exist!") && \
+    if [ -f dist/main.js ]; then \
+        echo "✅ dist/main.js exists!" && \
+        ls -lh dist/main.js && \
+        echo "📄 First few lines of dist/main.js:" && \
+        head -5 dist/main.js; \
+    else \
+        echo "❌ ERROR: dist/main.js not found in final image!" && \
+        echo "📁 Full directory tree:" && \
+        find . -type f -name "*.js" | head -20 && \
+        exit 1; \
+    fi
 
 # Expose port
 EXPOSE 4000
