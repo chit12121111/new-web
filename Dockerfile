@@ -15,11 +15,21 @@ COPY backend/ .
 # Generate Prisma Client
 RUN npm run prisma:generate
 
-# Build application
-RUN npm run build
+# Build application (with verbose output)
+RUN echo "🔨 Starting build..." && \
+    npm run build && \
+    echo "✅ Build completed successfully" || \
+    (echo "❌ Build failed!" && exit 1)
+
+# Verify build output exists
+RUN test -f dist/main.js || (echo "❌ ERROR: dist/main.js not found after build!" && ls -la dist/ 2>/dev/null || echo "dist/ folder does not exist!" && exit 1)
 
 # Remove devDependencies after build to reduce image size
+# Note: npm prune only removes node_modules, not dist folder
 RUN npm prune --production && npm cache clean --force
+
+# Verify dist still exists after prune
+RUN test -f dist/main.js || (echo "❌ ERROR: dist/main.js was removed!" && exit 1)
 
 # Expose port
 EXPOSE 4000
