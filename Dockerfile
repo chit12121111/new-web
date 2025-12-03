@@ -1,5 +1,11 @@
 # Stage 1: Build
-FROM node:20-alpine AS builder
+FROM node:20-slim AS builder
+
+# Install OpenSSL for Prisma (Debian-based images have better Prisma compatibility)
+RUN apt-get update && \
+    apt-get install -y openssl && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
@@ -66,7 +72,13 @@ RUN if [ ! -f dist/main.js ]; then \
     fi
 
 # Stage 2: Production
-FROM node:20-alpine
+FROM node:20-slim
+
+# Install OpenSSL for Prisma (Debian-based images have better Prisma compatibility)
+RUN apt-get update && \
+    apt-get install -y openssl && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
