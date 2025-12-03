@@ -25,6 +25,27 @@ for (const envPath of envPaths) {
 dotenv.config();
 
 async function bootstrap() {
+  // Validate required environment variables
+  const requiredEnvVars = ['JWT_SECRET', 'DATABASE_URL'];
+  const missingVars: string[] = [];
+  
+  for (const varName of requiredEnvVars) {
+    if (!process.env[varName]) {
+      missingVars.push(varName);
+    }
+  }
+  
+  if (missingVars.length > 0) {
+    console.error('❌ Missing required environment variables:');
+    missingVars.forEach(varName => {
+      console.error(`   - ${varName}`);
+    });
+    console.error('Please set these variables in Railway → Settings → Variables');
+    // Don't exit - let the app start and show errors in logs
+  } else {
+    console.log('✅ All required environment variables are set');
+  }
+
   const app = await NestFactory.create(AppModule);
 
   // Enable CORS - Allow all origins for Ngrok/public access
