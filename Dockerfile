@@ -15,14 +15,35 @@ COPY backend/ .
 # Generate Prisma Client
 RUN npm run prisma:generate
 
-# Build application (with verbose output)
-RUN echo "🔨 Starting build..." && \
-    npm run build && \
-    echo "✅ Build completed successfully" || \
-    (echo "❌ Build failed!" && exit 1)
+# Debug: Verify nest CLI is installed
+RUN echo "🔍 Checking NestJS CLI:" && \
+    npx nest --version || echo "⚠️ nest CLI not found, will use tsc directly" && \
+    echo "📁 Contents before build:" && ls -la && \
+    echo "📁 Source files:" && ls -la src/ | head -20 && \
+    echo "📄 Checking nest-cli.json:" && (cat nest-cli.json || echo "⚠️ nest-cli.json not found")
 
-# Verify build output exists
-RUN test -f dist/main.js || (echo "❌ ERROR: dist/main.js not found after build!" && ls -la dist/ 2>/dev/null || echo "dist/ folder does not exist!" && exit 1)
+# Build application (with verbose output and error handling)
+RUN echo "🔨 Starting build..." && \
+    (npm run build 2>&1 | tee /tmp/build.log || \
+     (echo "⚠️ npm run build failed, trying tsc directly..." && \
+      npx tsc && \
+      echo "✅ tsc build completed")) && \
+    echo "✅ Build command completed" && \
+    echo "📁 Contents after build:" && ls -la && \
+    echo "📁 Dist folder contents:" && (ls -la dist/ || echo "❌ dist/ folder does not exist!") && \
+    echo "📄 Build log:" && cat /tmp/build.log 2>/dev/null || echo "No build log"
+
+# Verify build output exists with detailed error
+RUN if [ ! -f dist/main.js ]; then \
+        echo "❌ ERROR: dist/main.js not found after build!" && \
+        echo "📁 Current directory contents:" && ls -la && \
+        echo "📁 Dist folder (if exists):" && (ls -la dist/ || echo "dist/ folder does not exist!") && \
+        echo "📁 Source files:" && ls -la src/ | head -10 && \
+        exit 1; \
+    else \
+        echo "✅ dist/main.js found!" && \
+        ls -lh dist/main.js; \
+    fi
 
 # Remove devDependencies after build to reduce image size
 # Note: npm prune only removes node_modules, not dist folder
