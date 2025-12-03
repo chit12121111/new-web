@@ -1,12 +1,15 @@
 FROM node:20-alpine
 
 # Install OpenSSL for Prisma
-# Alpine 3.22 uses openssl (3.x) but Prisma needs libssl.so.1.1
-# Install openssl and create symlink if needed
+# Alpine 3.22 uses openssl (3.x) but Prisma needs libssl.so.1.1 and libcrypto.so.1.1
+# Install openssl and create symlinks if needed
 RUN apk add --no-cache openssl libc6-compat && \
+    mkdir -p /lib && \
     if [ ! -f /lib/libssl.so.1.1 ] && [ -f /usr/lib/libssl.so.3 ]; then \
-        mkdir -p /lib && \
         ln -s /usr/lib/libssl.so.3 /lib/libssl.so.1.1 || true; \
+    fi && \
+    if [ ! -f /lib/libcrypto.so.1.1 ] && [ -f /usr/lib/libcrypto.so.3 ]; then \
+        ln -s /usr/lib/libcrypto.so.3 /lib/libcrypto.so.1.1 || true; \
     fi
 
 WORKDIR /app
