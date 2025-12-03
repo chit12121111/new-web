@@ -28,7 +28,16 @@ export class AuthController {
   @Post('login')
   @HttpCode(HttpStatus.OK)
   async login(@Request() req, @Body() loginDto: LoginDto) {
-    return this.authService.login(req.user);
+    try {
+      if (!req.user) {
+        throw new Error('User not found in request after authentication');
+      }
+      return await this.authService.login(req.user);
+    } catch (error: any) {
+      console.error('❌ Login controller error:', error);
+      console.error('Error stack:', error.stack);
+      throw error;
+    }
   }
 
   @Post('refresh')

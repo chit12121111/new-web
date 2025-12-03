@@ -16,22 +16,33 @@ export class AuthService {
   ) {}
 
   async validateUser(email: string, password: string): Promise<any> {
-    const user = await this.prisma.user.findUnique({
-      where: { email },
-      include: { subscription: true },
-    });
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { email },
+        include: { subscription: true },
+      });
 
-    if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
+      if (!user) {
+        throw new UnauthorizedException('Invalid credentials');
+      }
+
+      const isPasswordValid = await bcrypt.compare(password, user.password);
+      if (!isPasswordValid) {
+        throw new UnauthorizedException('Invalid credentials');
+      }
+
+      const { password: _, ...result } = user;
+      return result;
+    } catch (error: any) {
+      // Re-throw UnauthorizedException as-is
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      // Log and re-throw other errors (database, etc.)
+      console.error('❌ Validate user error:', error);
+      console.error('Error stack:', error.stack);
+      throw error;
     }
-
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
-
-    const { password: _, ...result } = user;
-    return result;
   }
 
   async register(registerDto: RegisterDto) {
@@ -94,49 +105,77 @@ export class AuthService {
   }
 
   async login(user: any) {
-    const payload = {
-      sub: user.id,
-      email: user.email,
-      role: user.role,
-    };
+    try {
+      // Validate JWT_SECRET is set
+      const jwtSecret = this.configService.get('JWT_SECRET');
+      if (!jwtSecret) {
+        throw new Error('JWT_SECRET is not configured');
+      }
 
-    const accessToken = this.jwtService.sign(payload);
-    const refreshToken = await this.generateRefreshToken(user.id);
-
-    return {
-      accessToken,
-      refreshToken,
-      user: {
-        id: user.id,
+      const payload = {
+        sub: user.id,
         email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
         role: user.role,
-        seoCredits: user.seoCredits,
-        reelCredits: user.reelCredits,
-      },
-    };
+      };
+
+      const accessToken = this.jwtService.sign(payload);
+      const refreshToken = await this.generateRefreshToken(user.id);
+
+      return {
+        accessToken,
+        refreshToken,
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          role: user.role,
+          seoCredits: user.seoCredits,
+          reelCredits: user.reelCredits,
+        },
+      };
+    } catch (error: any) {
+      console.error('❌ Login error:', error);
+      console.error('Error stack:', error.stack);
+      throw error;
+    }
   }
 
   async generateRefreshToken(userId: string): Promise<string> {
-    const payload = { sub: userId, type: 'refresh' };
-    const refreshToken = this.jwtService.sign(payload, {
-      secret: this.configService.get('JWT_REFRESH_SECRET'),
-      expiresIn: this.configService.get('JWT_REFRESH_EXPIRATION', '7d'),
-    });
+    try {
+      // Validate JWT_REFRESH_SECRET is set
+      const refreshSecret = this.configService.get('JWT_REFRESH_SECRET');
+      if (!refreshSecret) {
+        // Fallback to JWT_SECRET if JWT_REFRESH_SECRET is not set
+        const jwtSecret = this.configService.get('JWT_SECRET');
+        if (!jwtSecret) {
+          throw new Error('JWT_REFRESH_SECRET or JWT_SECRET must be configured');
+        }
+      }
 
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 7); // 7 days
+      const payload = { sub: userId, type: 'refresh' };
+      const refreshToken = this.jwtService.sign(payload, {
+        secret: refreshSecret || this.configService.get('JWT_SECRET'),
+        expiresIn: this.configService.get('JWT_REFRESH_EXPIRATION', '7d'),
+      });
 
-    await this.prisma.refreshToken.create({
-      data: {
-        userId,
-        token: refreshToken,
-        expiresAt,
-      },
-    });
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 7); // 7 days
 
-    return refreshToken;
+      await this.prisma.refreshToken.create({
+        data: {
+          userId,
+          token: refreshToken,
+          expiresAt,
+        },
+      });
+
+      return refreshToken;
+    } catch (error: any) {
+      console.error('❌ Generate refresh token error:', error);
+      console.error('Error stack:', error.stack);
+      throw error;
+    }
   }
 
   async refreshAccessToken(refreshToken: string) {
