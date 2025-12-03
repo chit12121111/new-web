@@ -2,7 +2,14 @@ import axios from 'axios';
 import Cookies from 'js-cookie';
 import toast from 'react-hot-toast';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+// Normalize API URL - remove trailing slash and ensure it's valid
+const getApiUrl = () => {
+  const url = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+  // Remove trailing slash if present
+  return url.replace(/\/+$/, '');
+};
+
+const API_URL = getApiUrl();
 
 console.log('🔗 API URL:', API_URL);
 console.log('🔗 API Base URL:', `${API_URL}/api`);
