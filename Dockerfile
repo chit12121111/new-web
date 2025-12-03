@@ -110,6 +110,22 @@ EXPOSE 4000
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
   CMD node -e "require('http').get('http://localhost:4000/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
-# Start application
-CMD ["sh", "-c", "npm run prisma:deploy && npm run start:prod"]
+# Debug: Show what's in the container before starting
+RUN echo "🔍 Final verification before CMD:" && \
+    echo "📁 Working directory:" && pwd && \
+    echo "📁 Contents:" && ls -la && \
+    echo "📁 Dist folder:" && (ls -la dist/ 2>/dev/null || echo "❌ dist/ folder does not exist!") && \
+    echo "📁 Package.json:" && cat package.json | grep -A 5 scripts && \
+    if [ -f dist/main.js ]; then \
+        echo "✅ dist/main.js exists - ready to start!" && \
+        ls -lh dist/main.js; \
+    else \
+        echo "❌ CRITICAL: dist/main.js not found!" && \
+        echo "📁 Searching for any .js files:" && \
+        find . -name "*.js" -type f 2>/dev/null | head -20 && \
+        exit 1; \
+    fi
+
+# Start application with debug output
+CMD ["sh", "-c", "echo '🚀 Starting application...' && echo '📁 Current directory:' && pwd && echo '📁 Contents:' && ls -la && echo '📁 Dist folder:' && (ls -la dist/ 2>/dev/null || echo '❌ dist/ folder does not exist!') && if [ ! -f dist/main.js ]; then echo '❌ ERROR: dist/main.js not found in container!' && exit 1; fi && echo '✅ dist/main.js found, running migrations...' && npm run prisma:deploy && echo '✅ Migrations completed, starting app...' && npm run start:prod"]
 
