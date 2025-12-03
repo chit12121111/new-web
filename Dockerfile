@@ -1,4 +1,5 @@
-FROM node:20-alpine
+# Stage 1: Build
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
@@ -42,15 +43,37 @@ RUN if [ ! -f dist/main.js ]; then \
         exit 1; \
     else \
         echo "✅ dist/main.js found!" && \
-        ls -lh dist/main.js; \
+        ls -lh dist/main.js && \
+        echo "📦 Build artifacts:" && find dist -type f | head -20; \
     fi
 
-# Remove devDependencies after build to reduce image size
-# Note: npm prune only removes node_modules, not dist folder
-RUN npm prune --production && npm cache clean --force
+# Stage 2: Production
+FROM node:20-alpine
 
-# Verify dist still exists after prune
-RUN test -f dist/main.js || (echo "❌ ERROR: dist/main.js was removed!" && exit 1)
+WORKDIR /app
+
+# Copy package files
+COPY backend/package*.json ./
+COPY backend/prisma ./prisma/
+
+# Install only production dependencies
+RUN npm ci --only=production && npm cache clean --force
+
+# Copy built application from builder stage
+COPY --from=builder /app/dist ./dist
+
+# Copy Prisma schema (needed for migrations)
+COPY --from=builder /app/prisma ./prisma
+
+# Generate Prisma Client (needed at runtime)
+RUN npm run prisma:generate
+
+# Verify dist exists in final image
+RUN echo "🔍 Verifying dist in final image:" && \
+    ls -la && \
+    ls -la dist/ && \
+    test -f dist/main.js && echo "✅ dist/main.js exists!" || \
+    (echo "❌ ERROR: dist/main.js not found in final image!" && exit 1)
 
 # Expose port
 EXPOSE 4000
