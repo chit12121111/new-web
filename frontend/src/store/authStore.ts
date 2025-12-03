@@ -59,7 +59,13 @@ export const useAuthStore = create<AuthState>((set) => ({
       await authApi.register(data);
       toast.success('Registration successful! Please login.');
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Registration failed');
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.error || 
+                          error.message || 
+                          'Registration failed';
+      console.error('❌ Registration error:', error);
+      console.error('Error response:', error.response?.data);
+      toast.error(errorMessage);
       throw error;
     }
   },

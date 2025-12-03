@@ -60,6 +60,16 @@ api.interceptors.response.use(
     } else {
       console.error('❌ Response Error:', error.response?.status, error.config?.url);
       console.error('Error details:', error.response?.data);
+      
+      // Show error message from backend if available
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.error || 
+                          `Server error (${error.response?.status})`;
+      
+      // Only show toast for non-401 errors (401 is handled separately)
+      if (error.response?.status !== 401) {
+        toast.error(errorMessage);
+      }
     }
     
     const originalRequest = error.config;
