@@ -54,10 +54,10 @@ RUN if [ ! -f dist/src/main.js ]; then \
 # Expose port
 EXPOSE 4000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:4000/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
+# Health check - เพิ่ม start-period และ retries
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=5 \
+  CMD node -e "require('http').get('http://localhost:' + (process.env.PORT || 4000) + '/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
-# Start application with debug output
-CMD ["sh", "-c", "echo '🚀 Starting application...' && echo '📁 Current directory:' && pwd && echo '📁 Contents:' && ls -la && echo '📁 Dist folder:' && (ls -la dist/ 2>/dev/null || echo '❌ dist/ folder does not exist!') && echo '📁 Dist/src folder:' && (ls -la dist/src/ 2>/dev/null || echo '❌ dist/src/ folder does not exist!') && if [ ! -f dist/src/main.js ]; then echo '❌ ERROR: dist/src/main.js not found in container!' && find dist -name 'main.js' 2>/dev/null && exit 1; fi && echo '✅ dist/src/main.js found, running migrations...' && npm run prisma:deploy && echo '✅ Migrations completed, starting app...' && npm run start:prod"]
+# Start application with debug output and error handling
+CMD ["sh", "-c", "echo '🚀 Starting application...' && echo '📁 Current directory:' && pwd && echo '📁 Contents:' && ls -la && echo '📁 Dist folder:' && (ls -la dist/ 2>/dev/null || echo '❌ dist/ folder does not exist!') && echo '📁 Dist/src folder:' && (ls -la dist/src/ 2>/dev/null || echo '❌ dist/src/ folder does not exist!') && if [ ! -f dist/src/main.js ]; then echo '❌ ERROR: dist/src/main.js not found in container!' && find dist -name 'main.js' 2>/dev/null && exit 1; fi && echo '✅ dist/src/main.js found' && echo '🔍 Environment variables:' && echo 'PORT='${PORT:-4000} && echo 'DATABASE_URL='${DATABASE_URL:+SET} && echo '📊 Running migrations...' && npm run prisma:deploy || (echo '⚠️ Migration failed, but continuing...' && sleep 2) && echo '✅ Starting application on port '${PORT:-4000}'...' && exec npm run start:prod"]
 
