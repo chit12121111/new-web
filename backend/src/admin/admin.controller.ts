@@ -28,13 +28,13 @@ export class AdminController {
     return this.adminService.getDashboardStats();
   }
 
-  // Users
+  // Users Management
   @Get('users')
-  async getAllUsers(
-    @Query('page', ParseIntPipe) page: number = 1,
-    @Query('limit', ParseIntPipe) limit: number = 20,
+  async getUsers(
+    @Query('page') page: string = '1',
+    @Query('limit') limit: string = '10',
   ) {
-    return this.adminService.getAllUsers(page, limit);
+    return this.adminService.getAllUsers(parseInt(page), parseInt(limit));
   }
 
   @Get('users/:id')
@@ -42,24 +42,9 @@ export class AdminController {
     return this.adminService.getUserById(id);
   }
 
-  @Put('users/:id/credits')
-  async updateUserCredits(
-    @Param('id') id: string,
-    @Body() body: { seoCredits?: number; reelCredits?: number },
-  ) {
-    return this.adminService.updateUserCredits(
-      id,
-      body.seoCredits,
-      body.reelCredits,
-    );
-  }
-
-  @Put('users/:id/role')
-  async updateUserRole(
-    @Param('id') id: string,
-    @Body() body: { role: UserRole },
-  ) {
-    return this.adminService.updateUserRole(id, body.role);
+  @Put('users/:id')
+  async updateUser(@Param('id') id: string, @Body() updateData: any) {
+    return this.adminService.updateUserRole(id, updateData.role);
   }
 
   @Delete('users/:id')
@@ -67,24 +52,24 @@ export class AdminController {
     return this.adminService.deleteUser(id);
   }
 
-  // Plans
+  // Plans Management
   @Get('plans')
-  async getAllPlans() {
+  async getPlans() {
     return this.adminService.getAllPlans();
   }
 
   @Put('plans/:id')
-  async updatePlan(@Param('id') id: string, @Body() data: any) {
-    return this.adminService.updatePlan(id, data);
+  async updatePlan(@Param('id') id: string, @Body() planData: any) {
+    return this.adminService.updatePlan(id, planData);
   }
 
-  // Contents
+  // Content Management
   @Get('contents')
-  async getAllContents(
-    @Query('page', ParseIntPipe) page: number = 1,
-    @Query('limit', ParseIntPipe) limit: number = 20,
+  async getContents(
+    @Query('page') page: string = '1',
+    @Query('limit') limit: string = '10',
   ) {
-    return this.adminService.getAllContents(page, limit);
+    return this.adminService.getAllContents(parseInt(page), parseInt(limit));
   }
 
   @Delete('contents/:id')
@@ -92,51 +77,20 @@ export class AdminController {
     return this.adminService.deleteContent(id);
   }
 
-  // Payments
-  @Get('payments')
-  async getPaymentReports(
-    @Query('startDate') startDate?: string,
-    @Query('endDate') endDate?: string,
-  ) {
-    return this.adminService.getPaymentReports(
-      startDate ? new Date(startDate) : undefined,
-      endDate ? new Date(endDate) : undefined,
-    );
-  }
-
-  // Webhooks
-  @Get('webhooks')
-  async getWebhookLogs(
-    @Query('page', ParseIntPipe) page: number = 1,
-    @Query('limit', ParseIntPipe) limit: number = 50,
-  ) {
-    return this.adminService.getWebhookLogs(page, limit);
-  }
-
-  // AI Templates
-  @Get('templates')
-  async getPromptTemplates() {
-    return this.adminService.getPromptTemplates();
-  }
-
-  @Get('templates/:id')
-  async getPromptTemplateById(@Param('id') id: string) {
-    return this.adminService.getPromptTemplateById(id);
-  }
-
-  @Post('templates')
-  async createPromptTemplate(@Body() data: any) {
-    return this.adminService.createPromptTemplate(data);
-  }
-
-  @Put('templates/:id')
-  async updatePromptTemplate(@Param('id') id: string, @Body() data: any) {
-    return this.adminService.updatePromptTemplate(id, data);
-  }
-
-  @Delete('templates/:id')
-  async deletePromptTemplate(@Param('id') id: string) {
-    return this.adminService.deletePromptTemplate(id);
+  // Seed Data (No auth required for initial setup)
+  @Post('seed')
+  async seedData() {
+    return this.adminService.seedData();
   }
 }
 
+// Public seed endpoint (no auth required)
+@Controller('setup')
+export class SetupController {
+  constructor(private adminService: AdminService) {}
+
+  @Post('seed')
+  async seedData() {
+    return this.adminService.seedData();
+  }
+}

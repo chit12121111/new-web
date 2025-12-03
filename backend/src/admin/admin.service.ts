@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UserRole } from '@prisma/client';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AdminService {
@@ -273,6 +274,56 @@ export class AdminService {
     return this.prisma.aIPromptTemplate.delete({
       where: { id: templateId },
     });
+  }
+
+  // Seed Data (for initial setup)
+  async seedData() {
+    try {
+      console.log('🌱 Starting seed...');
+      
+      // Check if admin user already exists
+      const existingAdmin = await this.prisma.user.findUnique({
+        where: { email: 'admin@example.com' },
+      });
+      
+      if (existingAdmin) {
+        return {
+          message: 'Admin user already exists',
+          admin: {
+            email: existingAdmin.email,
+            role: existingAdmin.role,
+          },
+        };
+      }
+      
+      // Create admin user
+      const hashedPassword = await bcrypt.hash('password123', 10);
+      const admin = await this.prisma.user.create({
+        data: {
+          email: 'admin@example.com',
+          password: hashedPassword,
+          firstName: 'Admin',
+          lastName: 'User',
+          role: UserRole.ADMIN,
+          seoCredits: 999999,
+          reelCredits: 999999,
+        },
+      });
+      
+      console.log('✅ Admin user created successfully');
+      
+      return {
+        message: 'Seed completed successfully',
+        admin: {
+          email: admin.email,
+          password: 'password123',
+          role: admin.role,
+        },
+      };
+    } catch (error: any) {
+      console.error('❌ Seed failed:', error);
+      throw error;
+    }
   }
 
   // Dashboard Stats
