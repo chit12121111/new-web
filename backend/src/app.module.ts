@@ -10,8 +10,10 @@ import { AiModule } from './ai/ai.module';
 import { ContentsModule } from './contents/contents.module';
 import { AdminModule } from './admin/admin.module';
 import { HealthModule } from './health/health.module';
+import { AppController } from './app.controller';
 
 @Module({
+  controllers: [AppController],
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
