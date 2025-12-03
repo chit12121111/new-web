@@ -17,20 +17,36 @@ export class AuthService {
 
   async validateUser(email: string, password: string): Promise<any> {
     try {
+      console.log(`🔍 Validating user: ${email}`);
+      
       const user = await this.prisma.user.findUnique({
         where: { email },
         include: { subscription: true },
       });
 
       if (!user) {
+        console.log(`❌ User not found: ${email}`);
+        throw new UnauthorizedException('Invalid credentials');
+      }
+
+      console.log(`✅ User found: ${user.id}, comparing password...`);
+      
+      // Check if password is hashed (starts with $2a$ or $2b$)
+      const isPasswordHashed = user.password.startsWith('$2a$') || user.password.startsWith('$2b$');
+      
+      if (!isPasswordHashed) {
+        console.error(`❌ Password for user ${user.id} is not hashed! This is a security issue.`);
         throw new UnauthorizedException('Invalid credentials');
       }
 
       const isPasswordValid = await bcrypt.compare(password, user.password);
+      
       if (!isPasswordValid) {
+        console.log(`❌ Password mismatch for user: ${email}`);
         throw new UnauthorizedException('Invalid credentials');
       }
 
+      console.log(`✅ Password valid for user: ${email}`);
       const { password: _, ...result } = user;
       return result;
     } catch (error: any) {
