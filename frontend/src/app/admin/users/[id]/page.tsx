@@ -245,19 +245,22 @@ export default function UserDetailPage() {
 
         {/* Credits Information */}
         <Card>
-          <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center justify-between">
-            <span>Credits</span>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold text-gray-900">
+              Credits
+            </h2>
             {!showCreditsForm && (
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setShowCreditsForm(true)}
+                className="flex items-center gap-1"
               >
-                <Plus className="h-4 w-4 mr-1" />
+                <Plus className="h-4 w-4" />
                 Update Credits
               </Button>
             )}
-          </h2>
+          </div>
           {!showCreditsForm ? (
             <div className="space-y-4">
               <div>
