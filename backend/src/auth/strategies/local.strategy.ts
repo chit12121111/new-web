@@ -12,11 +12,29 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(email: string, password: string): Promise<any> {
-    const user = await this.authService.validateUser(email, password);
-    if (!user) {
+    try {
+      if (!email || !password) {
+        console.log('❌ LocalStrategy: Missing email or password');
+        throw new UnauthorizedException('Email and password are required');
+      }
+
+      console.log(`🔍 LocalStrategy: Validating email: ${email}`);
+      const user = await this.authService.validateUser(email, password);
+      
+      if (!user) {
+        console.log('❌ LocalStrategy: User validation returned null');
+        throw new UnauthorizedException('Invalid credentials');
+      }
+      
+      console.log(`✅ LocalStrategy: User validated successfully: ${user.email}`);
+      return user;
+    } catch (error: any) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      console.error('❌ LocalStrategy validation error:', error);
       throw new UnauthorizedException('Invalid credentials');
     }
-    return user;
   }
 }
 

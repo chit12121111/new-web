@@ -19,8 +19,13 @@ export class AuthService {
     try {
       console.log(`🔍 Validating user: ${email}`);
       
+      if (!email || !password) {
+        console.log(`❌ Missing email or password`);
+        throw new UnauthorizedException('Invalid credentials');
+      }
+
       const user = await this.prisma.user.findUnique({
-        where: { email },
+        where: { email: email.toLowerCase().trim() },
         include: { subscription: true },
       });
 
@@ -29,25 +34,51 @@ export class AuthService {
         throw new UnauthorizedException('Invalid credentials');
       }
 
-      console.log(`✅ User found: ${user.id}, comparing password...`);
+      console.log(`✅ User found: ${user.id}, email: ${user.email}`);
       
-      // Check if password is hashed (starts with $2a$ or $2b$)
-      const isPasswordHashed = user.password.startsWith('$2a$') || user.password.startsWith('$2b$');
+      // Check if password is hashed (starts with $2a$, $2b$, or $2y$)
+      const isPasswordHashed = 
+        user.password.startsWith('$2a$') || 
+        user.password.startsWith('$2b$') || 
+        user.password.startsWith('$2y$');
       
       if (!isPasswordHashed) {
-        console.error(`❌ Password for user ${user.id} is not hashed! This is a security issue.`);
-        throw new UnauthorizedException('Invalid credentials');
+        console.error(`❌ Password for user ${user.id} (${user.email}) is not hashed!`);
+        console.error(`   Password format: ${user.password.substring(0, 20)}...`);
+        console.error(`   This is a security issue. Password must be hashed with bcrypt.`);
+        
+        // Try to auto-fix: hash the plain password if it matches
+        if (user.password === password) {
+          console.log(`⚠️  Auto-fixing: Hashing plain password for user ${user.id}`);
+          const hashedPassword = await bcrypt.hash(password, 10);
+          await this.prisma.user.update({
+            where: { id: user.id },
+            data: { password: hashedPassword },
+          });
+          console.log(`✅ Password hashed and updated for user ${user.id}`);
+        } else {
+          throw new UnauthorizedException('Invalid credentials');
+        }
       }
 
-      const isPasswordValid = await bcrypt.compare(password, user.password);
+      // Re-fetch user to get updated password if it was just hashed
+      const updatedUser = isPasswordHashed 
+        ? user 
+        : await this.prisma.user.findUnique({
+            where: { id: user.id },
+            include: { subscription: true },
+          });
+
+      const isPasswordValid = await bcrypt.compare(password, updatedUser.password);
       
       if (!isPasswordValid) {
         console.log(`❌ Password mismatch for user: ${email}`);
+        console.log(`   Password provided: ${password ? 'Yes' : 'No'} (length: ${password?.length || 0})`);
         throw new UnauthorizedException('Invalid credentials');
       }
 
       console.log(`✅ Password valid for user: ${email}`);
-      const { password: _, ...result } = user;
+      const { password: _, ...result } = updatedUser;
       return result;
     } catch (error: any) {
       // Re-throw UnauthorizedException as-is
@@ -56,8 +87,9 @@ export class AuthService {
       }
       // Log and re-throw other errors (database, etc.)
       console.error('❌ Validate user error:', error);
+      console.error('Error message:', error.message);
       console.error('Error stack:', error.stack);
-      throw error;
+      throw new UnauthorizedException('Invalid credentials');
     }
   }
 
