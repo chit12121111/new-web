@@ -249,22 +249,36 @@ export default function UserDetailPage() {
             <h2 className="text-xl font-semibold text-gray-900">
               Credits Management
             </h2>
-            {user && !showCreditsForm && (
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={() => {
-                  setShowCreditsForm(true);
-                  setFormData({
-                    ...formData,
-                    seoCredits: (user.seoCredits || 0).toString(),
-                    reelCredits: (user.reelCredits || 0).toString(),
-                  });
-                }}
-              >
-                <Plus className="h-4 w-4 mr-1" />
-                Update Credits
-              </Button>
+            {user && (
+              <>
+                {!showCreditsForm ? (
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() => {
+                      setShowCreditsForm(true);
+                      setFormData({
+                        ...formData,
+                        seoCredits: (user.seoCredits || 0).toString(),
+                        reelCredits: (user.reelCredits || 0).toString(),
+                      });
+                    }}
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Update Credits
+                  </Button>
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setShowCreditsForm(false);
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                )}
+              </>
             )}
           </div>
           {!showCreditsForm ? (
