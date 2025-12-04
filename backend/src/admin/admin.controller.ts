@@ -47,6 +47,14 @@ export class AdminController {
     return this.adminService.updateUserRole(id, updateData.role);
   }
 
+  @Put('users/:id/credits')
+  async updateUserCredits(
+    @Param('id') id: string,
+    @Body() body: { seoCredits?: number; reelCredits?: number },
+  ) {
+    return this.adminService.updateUserCredits(id, body.seoCredits, body.reelCredits);
+  }
+
   @Delete('users/:id')
   async deleteUser(@Param('id') id: string) {
     return this.adminService.deleteUser(id);

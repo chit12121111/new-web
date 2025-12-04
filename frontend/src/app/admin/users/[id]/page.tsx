@@ -8,7 +8,7 @@ import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
 import Input from '@/components/ui/Input';
 import toast from 'react-hot-toast';
-import { ArrowLeft, Save, Trash2, Key, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, Save, Trash2, Key, Eye, EyeOff, Coins, Plus } from 'lucide-react';
 import { formatDate, getRoleBadgeColor } from '@/lib/utils';
 
 export default function UserDetailPage() {
@@ -19,12 +19,16 @@ export default function UserDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const [isUpdatingCredits, setIsUpdatingCredits] = useState(false);
   const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showCreditsForm, setShowCreditsForm] = useState(false);
   const [formData, setFormData] = useState({
     role: '',
     newPassword: '',
     confirmPassword: '',
+    seoCredits: '',
+    reelCredits: '',
   });
 
   useEffect(() => {
@@ -41,6 +45,8 @@ export default function UserDetailPage() {
       setUser(userData);
       setFormData({
         role: userData.role || '',
+        seoCredits: userData.seoCredits?.toString() || '0',
+        reelCredits: userData.reelCredits?.toString() || '0',
       });
     } catch (error: any) {
       console.error('Failed to fetch user:', error);
@@ -67,6 +73,39 @@ export default function UserDetailPage() {
       toast.error(error?.response?.data?.message || 'Failed to update user role');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleUpdateCredits = async () => {
+    const seoCredits = formData.seoCredits ? parseInt(formData.seoCredits) : undefined;
+    const reelCredits = formData.reelCredits ? parseInt(formData.reelCredits) : undefined;
+
+    if (seoCredits === undefined && reelCredits === undefined) {
+      toast.error('Please enter at least one credit value');
+      return;
+    }
+
+    if (seoCredits !== undefined && (isNaN(seoCredits) || seoCredits < 0)) {
+      toast.error('SEO Credits must be a valid positive number');
+      return;
+    }
+
+    if (reelCredits !== undefined && (isNaN(reelCredits) || reelCredits < 0)) {
+      toast.error('Reel Credits must be a valid positive number');
+      return;
+    }
+
+    setIsUpdatingCredits(true);
+    try {
+      await adminApi.updateUserCredits(userId, seoCredits, reelCredits);
+      toast.success('Credits updated successfully');
+      fetchUser(); // Refresh user data
+      setShowCreditsForm(false);
+    } catch (error: any) {
+      console.error('Failed to update credits:', error);
+      toast.error(error?.response?.data?.message || 'Failed to update credits');
+    } finally {
+      setIsUpdatingCredits(false);
     }
   };
 
@@ -206,27 +245,97 @@ export default function UserDetailPage() {
 
         {/* Credits Information */}
         <Card>
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">
-            Credits
+          <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center justify-between">
+            <span>Credits</span>
+            {!showCreditsForm && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowCreditsForm(true)}
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Update Credits
+              </Button>
+            )}
           </h2>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                SEO Credits
-              </label>
-              <p className="text-2xl font-bold text-primary-600">
-                {user.seoCredits || 0}
-              </p>
+          {!showCreditsForm ? (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  SEO Credits
+                </label>
+                <p className="text-2xl font-bold text-primary-600">
+                  {user.seoCredits || 0}
+                </p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Reel Credits
+                </label>
+                <p className="text-2xl font-bold text-primary-600">
+                  {user.reelCredits || 0}
+                </p>
+              </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Reel Credits
-              </label>
-              <p className="text-2xl font-bold text-primary-600">
-                {user.reelCredits || 0}
-              </p>
+          ) : (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  SEO Credits
+                </label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={formData.seoCredits}
+                  onChange={(e) => setFormData({ ...formData, seoCredits: e.target.value })}
+                  placeholder="Enter SEO credits"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Current: {user.seoCredits || 0}
+                </p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Reel Credits
+                </label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={formData.reelCredits}
+                  onChange={(e) => setFormData({ ...formData, reelCredits: e.target.value })}
+                  placeholder="Enter Reel credits"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Current: {user.reelCredits || 0}
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="primary"
+                  onClick={handleUpdateCredits}
+                  isLoading={isUpdatingCredits}
+                  className="flex-1"
+                >
+                  <Coins className="h-4 w-4 mr-2" />
+                  Update Credits
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowCreditsForm(false);
+                    setFormData({
+                      ...formData,
+                      seoCredits: (user.seoCredits || 0).toString(),
+                      reelCredits: (user.reelCredits || 0).toString(),
+                    });
+                  }}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+              </div>
             </div>
-          </div>
+          )}
         </Card>
 
         {/* Update Role */}
