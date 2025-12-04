@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { adminApi } from '@/lib/api';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
@@ -10,6 +11,7 @@ import { Search, Edit, Trash2 } from 'lucide-react';
 import { formatDate, getRoleBadgeColor } from '@/lib/utils';
 
 export default function AdminUsersPage() {
+  const router = useRouter();
   const [users, setUsers] = useState<any[]>([]);
   const [pagination, setPagination] = useState<any>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -131,9 +133,7 @@ export default function AdminUsersPage() {
                           variant="ghost"
                           size="sm"
                           className="mr-2"
-                          onClick={() =>
-                            (window.location.href = `/admin/users/${user.id}`)
-                          }
+                          onClick={() => router.push(`/admin/users/${user.id}`)}
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
