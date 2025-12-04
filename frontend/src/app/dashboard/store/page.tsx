@@ -68,10 +68,26 @@ export default function StorePage() {
     setIsLoading(true);
     try {
       const response = await usersApi.getStoreTemplates();
-      setTemplates(response.data);
+      // Validate and sanitize template data
+      const templates = Array.isArray(response.data) 
+        ? response.data.map((template: any) => ({
+            ...template,
+            // Ensure thumbnail is valid or null
+            thumbnail: isValidImageUrl(template.thumbnail) ? template.thumbnail : null,
+            // Ensure required fields exist
+            tags: Array.isArray(template.tags) ? template.tags : [],
+            isPurchased: Boolean(template.isPurchased),
+            isPaid: Boolean(template.isPaid),
+            price: Number(template.price) || 0,
+          }))
+        : [];
+      setTemplates(templates);
     } catch (error: any) {
       console.error('Failed to fetch templates:', error);
-      toast.error(error?.response?.data?.message || 'Failed to fetch templates');
+      const errorMessage = error?.response?.data?.message || error?.message || 'Failed to fetch templates';
+      toast.error(errorMessage);
+      // Set empty array on error to prevent further issues
+      setTemplates([]);
     } finally {
       setIsLoading(false);
     }
@@ -179,6 +195,31 @@ export default function StorePage() {
     });
   };
 
+  const isValidImageUrl = (url: string | null | undefined): boolean => {
+    if (!url) return false;
+    // Check if it's a valid URL (starts with http:// or https://)
+    // Also check if it's not a UUID (UUIDs don't have http/https)
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return true;
+    }
+    // If it looks like a UUID or invalid path, return false
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (uuidRegex.test(url)) {
+      return false;
+    }
+    return false;
+  };
+
+  const getThumbnailUrl = (template: Template): string => {
+    if (isValidImageUrl(template.thumbnail)) {
+      return template.thumbnail!;
+    }
+    // Return default image based on type
+    return template.type === 'SEO_ARTICLE' 
+      ? 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800&h=600&fit=crop'
+      : 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=800&h=600&fit=crop';
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -284,28 +325,19 @@ export default function StorePage() {
               <Card key={template.id} hover className="flex flex-col overflow-hidden">
                 {/* Image Section - Large and Prominent */}
                 <div className="relative w-full h-64 bg-gradient-to-br from-primary-100 to-primary-200 overflow-hidden">
-                  {template.thumbnail ? (
-                    <img
-                      src={template.thumbnail}
-                      alt={template.name}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        // Fallback to default image if thumbnail fails to load
-                        const target = e.target as HTMLImageElement;
-                        target.src = template.type === 'SEO_ARTICLE' 
-                          ? 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800&h=600&fit=crop'
-                          : 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=800&h=600&fit=crop';
-                      }}
-                    />
-                  ) : (
-                    <img
-                      src={template.type === 'SEO_ARTICLE' 
+                  <img
+                    src={getThumbnailUrl(template)}
+                    alt={template.name}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      // Fallback to default image if thumbnail fails to load
+                      const target = e.target as HTMLImageElement;
+                      target.src = template.type === 'SEO_ARTICLE' 
                         ? 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800&h=600&fit=crop'
-                        : 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=800&h=600&fit=crop'}
-                      alt={template.name}
-                      className="w-full h-full object-cover opacity-80"
-                    />
-                  )}
+                        : 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=800&h=600&fit=crop';
+                    }}
+                    loading="lazy"
+                  />
                   {/* Badge overlay */}
                   <div className="absolute top-3 right-3">
                     <Badge className={getTypeColor(template.type)}>
@@ -441,9 +473,9 @@ export default function StorePage() {
             <div className="space-y-6">
               {/* Header Section */}
               <div className="flex items-start gap-4">
-                {viewingTemplate.thumbnail && (
+                {isValidImageUrl(viewingTemplate.thumbnail) && (
                   <img
-                    src={viewingTemplate.thumbnail}
+                    src={getThumbnailUrl(viewingTemplate)}
                     alt={viewingTemplate.name}
                     className="w-32 h-32 object-cover rounded-lg"
                     onError={(e) => {
@@ -452,6 +484,7 @@ export default function StorePage() {
                         ? 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800&h=600&fit=crop'
                         : 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=800&h=600&fit=crop';
                     }}
+                    loading="lazy"
                   />
                 )}
                 <div className="flex-1">
