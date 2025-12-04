@@ -77,6 +77,26 @@ export class AdminController {
     return this.adminService.deleteContent(id);
   }
 
+  // Payments Management
+  @Get('payments')
+  async getPayments(
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    const start = startDate ? new Date(startDate) : undefined;
+    const end = endDate ? new Date(endDate) : undefined;
+    return this.adminService.getPaymentReports(start, end);
+  }
+
+  // Webhook Logs
+  @Get('webhooks')
+  async getWebhooks(
+    @Query('page') page: string = '1',
+    @Query('limit') limit: string = '50',
+  ) {
+    return this.adminService.getWebhookLogs(parseInt(page), parseInt(limit));
+  }
+
   // Templates Management
   @Get('templates')
   async getTemplates() {
