@@ -157,12 +157,17 @@ export default function StorePage() {
   };
 
   const handleViewTemplate = (template: Template) => {
-    // Check if user has permission to view
-    if (template.isPaid && !template.isPurchased) {
-      toast.error('Please purchase this template first to view details');
-      return;
+    try {
+      // Check if user has permission to view
+      if (template.isPaid && !template.isPurchased) {
+        toast.error('Please purchase this template first to view details');
+        return;
+      }
+      setViewingTemplate(template);
+    } catch (error) {
+      console.error('Error viewing template:', error);
+      toast.error('Failed to open template details');
     }
-    setViewingTemplate(template);
   };
 
   const formatDate = (dateString: string) => {
@@ -413,7 +418,15 @@ export default function StorePage() {
 
       {/* Template Details Modal */}
       {viewingTemplate && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          onClick={(e) => {
+            // Close modal when clicking outside
+            if (e.target === e.currentTarget) {
+              setViewingTemplate(null);
+            }
+          }}
+        >
           <Card className="max-w-3xl w-full max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
@@ -594,8 +607,14 @@ export default function StorePage() {
                   <Button
                     variant="primary"
                     onClick={() => {
-                      setViewingTemplate(null);
-                      router.push(`/dashboard/generate?template=${viewingTemplate.id}&type=${viewingTemplate.type.toLowerCase()}`);
+                      try {
+                        setViewingTemplate(null);
+                        const type = viewingTemplate.type.toLowerCase();
+                        router.push(`/dashboard/generate?template=${viewingTemplate.id}&type=${type}`);
+                      } catch (error) {
+                        console.error('Error navigating to generate page:', error);
+                        toast.error('Failed to navigate to generate page');
+                      }
                     }}
                     className="flex-1"
                   >
