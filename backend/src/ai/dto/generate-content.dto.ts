@@ -1,9 +1,8 @@
-import { IsString, MinLength, MaxLength } from 'class-validator';
+import { IsString, MinLength } from 'class-validator';
 
 export class GenerateContentDto {
   @IsString()
-  @MinLength(3)
-  @MaxLength(200)
+  @MinLength(1, { message: 'Prompt cannot be empty' })
   topic: string;
 }
 

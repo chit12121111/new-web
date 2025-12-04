@@ -516,12 +516,19 @@ export default function GeneratePage() {
                 rows={6}
                 disabled={loadingTemplate || isTranslating}
               />
-              {isTranslating && (
-                <div className="absolute top-10 right-3 flex items-center text-xs text-gray-500">
-                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                  Translating...
+              <div className="flex items-center justify-between mt-1">
+                <div className="flex items-center gap-2">
+                  {isTranslating && (
+                    <div className="flex items-center text-xs text-gray-500">
+                      <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                      Translating...
+                    </div>
+                  )}
                 </div>
-              )}
+                <p className="text-xs text-gray-500">
+                  {prompt.length} characters
+                </p>
+              </div>
             </div>
 
             <Button
