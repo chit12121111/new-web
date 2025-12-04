@@ -8,7 +8,7 @@ import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
 import Input from '@/components/ui/Input';
 import toast from 'react-hot-toast';
-import { ArrowLeft, Save, Trash2 } from 'lucide-react';
+import { ArrowLeft, Save, Trash2, Key, Eye, EyeOff } from 'lucide-react';
 import { formatDate, getRoleBadgeColor } from '@/lib/utils';
 
 export default function UserDetailPage() {
@@ -18,8 +18,13 @@ export default function UserDetailPage() {
   const [user, setUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     role: '',
+    newPassword: '',
+    confirmPassword: '',
   });
 
   useEffect(() => {
@@ -62,6 +67,35 @@ export default function UserDetailPage() {
       toast.error(error?.response?.data?.message || 'Failed to update user role');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!formData.newPassword || formData.newPassword.length < 6) {
+      toast.error('Password must be at least 6 characters long');
+      return;
+    }
+
+    if (formData.newPassword !== formData.confirmPassword) {
+      toast.error('Passwords do not match');
+      return;
+    }
+
+    if (!confirm('Are you sure you want to reset this user\'s password?')) {
+      return;
+    }
+
+    setIsResettingPassword(true);
+    try {
+      await adminApi.resetUserPassword(userId, formData.newPassword);
+      toast.success('Password reset successfully');
+      setFormData({ ...formData, newPassword: '', confirmPassword: '' });
+      setShowPasswordForm(false);
+    } catch (error: any) {
+      console.error('Failed to reset password:', error);
+      toast.error(error?.response?.data?.message || 'Failed to reset password');
+    } finally {
+      setIsResettingPassword(false);
     }
   };
 
@@ -226,6 +260,87 @@ export default function UserDetailPage() {
               <Save className="h-4 w-4 mr-2" />
               Update Role
             </Button>
+          </div>
+        </Card>
+
+        {/* Reset Password */}
+        <Card>
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">
+            Password Management
+          </h2>
+          <div className="space-y-4">
+            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-sm text-yellow-800">
+                <strong>Note:</strong> Passwords are encrypted and cannot be viewed. You can only reset the password to a new one.
+              </p>
+            </div>
+            
+            {!showPasswordForm ? (
+              <Button
+                variant="outline"
+                onClick={() => setShowPasswordForm(true)}
+                className="w-full"
+              >
+                <Key className="h-4 w-4 mr-2" />
+                Reset Password
+              </Button>
+            ) : (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    New Password
+                  </label>
+                  <div className="relative">
+                    <Input
+                      type={showPassword ? 'text' : 'password'}
+                      value={formData.newPassword}
+                      onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
+                      placeholder="Enter new password (min 6 characters)"
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Confirm Password
+                  </label>
+                  <Input
+                    type={showPassword ? 'text' : 'password'}
+                    value={formData.confirmPassword}
+                    onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                    placeholder="Confirm new password"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="primary"
+                    onClick={handleResetPassword}
+                    isLoading={isResettingPassword}
+                    className="flex-1"
+                  >
+                    <Key className="h-4 w-4 mr-2" />
+                    Reset Password
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowPasswordForm(false);
+                      setFormData({ ...formData, newPassword: '', confirmPassword: '' });
+                    }}
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         </Card>
 

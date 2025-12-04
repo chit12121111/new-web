@@ -170,7 +170,9 @@ export const adminApi = {
   updateUserCredits: (id: string, seoCredits?: number, reelCredits?: number) =>
     api.put(`/admin/users/${id}/credits`, { seoCredits, reelCredits }),
   updateUserRole: (id: string, role: string) =>
-    api.put(`/admin/users/${id}/role`, { role }),
+    api.put(`/admin/users/${id}`, { role }),
+  resetUserPassword: (id: string, password: string) =>
+    api.post(`/admin/users/${id}/reset-password`, { password }),
   deleteUser: (id: string) => api.delete(`/admin/users/${id}`),
   getPlans: () => api.get('/admin/plans'),
   updatePlan: (id: string, data: any) => api.put(`/admin/plans/${id}`, data),
