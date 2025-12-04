@@ -247,36 +247,42 @@ export default function UserDetailPage() {
         <Card>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold text-gray-900">
-              Credits
+              Credits Management
             </h2>
-            {!showCreditsForm && (
+            {user && !showCreditsForm && (
               <Button
-                variant="outline"
+                variant="primary"
                 size="sm"
-                onClick={() => setShowCreditsForm(true)}
-                className="flex items-center gap-1"
+                onClick={() => {
+                  setShowCreditsForm(true);
+                  setFormData({
+                    ...formData,
+                    seoCredits: (user.seoCredits || 0).toString(),
+                    reelCredits: (user.reelCredits || 0).toString(),
+                  });
+                }}
               >
-                <Plus className="h-4 w-4" />
+                <Plus className="h-4 w-4 mr-1" />
                 Update Credits
               </Button>
             )}
           </div>
           {!showCreditsForm ? (
             <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+              <div className="p-4 bg-gradient-to-r from-primary-50 to-blue-50 rounded-lg border border-primary-200">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   SEO Credits
                 </label>
-                <p className="text-2xl font-bold text-primary-600">
-                  {user.seoCredits || 0}
+                <p className="text-3xl font-bold text-primary-600">
+                  {user?.seoCredits || 0}
                 </p>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+              <div className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-200">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Reel Credits
                 </label>
-                <p className="text-2xl font-bold text-primary-600">
-                  {user.reelCredits || 0}
+                <p className="text-3xl font-bold text-primary-600">
+                  {user?.reelCredits || 0}
                 </p>
               </div>
             </div>

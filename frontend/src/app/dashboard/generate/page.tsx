@@ -76,8 +76,30 @@ export default function GeneratePage() {
         let templateContent = template.template || '';
         // Optionally replace {{topic}} with empty string or placeholder
         templateContent = templateContent.replace(/\{\{topic\}\}/g, '');
-        setPrompt(templateContent);
-        toast.success('Template loaded!');
+        
+        // If template contains Thai, translate to English automatically
+        if (containsThai(templateContent)) {
+          setIsTranslating(true);
+          try {
+            const translated = await translateThaiToEnglish(templateContent);
+            if (translated && translated.trim().length > 0 && translated !== templateContent) {
+              setPrompt(translated);
+              toast.success('Template loaded and translated to English!');
+            } else {
+              setPrompt(templateContent);
+              toast.success('Template loaded!');
+            }
+          } catch (error) {
+            console.error('Translation failed:', error);
+            setPrompt(templateContent);
+            toast.success('Template loaded!');
+          } finally {
+            setIsTranslating(false);
+          }
+        } else {
+          setPrompt(templateContent);
+          toast.success('Template loaded!');
+        }
       } else {
         toast.error('Template not found');
         // Optionally redirect to store page
@@ -145,27 +167,14 @@ export default function GeneratePage() {
   // Debounce timer for translation
   const [translationTimer, setTranslationTimer] = useState<NodeJS.Timeout | null>(null);
 
-  // Handle prompt change with auto-translation
+  // Handle prompt change (no auto-translation - keep original text)
   const handlePromptChange = (value: string) => {
     setPrompt(value);
     
-    // Clear previous timer
+    // Clear previous timer if exists
     if (translationTimer) {
       clearTimeout(translationTimer);
-    }
-    
-    // Auto-translate if contains Thai characters (debounce)
-    if (containsThai(value) && value.trim().length > 0) {
-      // Wait a bit for user to finish typing
-      const timer = setTimeout(async () => {
-        const translated = await translateThaiToEnglish(value);
-        if (translated !== value && translated.trim().length > 0) {
-          setPrompt(translated);
-          toast.success('Translated to English automatically');
-        }
-      }, 1500); // Wait 1.5 seconds after user stops typing
-      
-      setTranslationTimer(timer);
+      setTranslationTimer(null);
     }
   };
 
