@@ -5,8 +5,17 @@ export function middleware(request: NextRequest) {
   const token = request.cookies.get('accessToken')?.value;
   const { pathname } = request.nextUrl;
 
+  // Check if pathname is a UUID (invalid route)
+  const uuidRegex = /^\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (uuidRegex.test(pathname)) {
+    // Redirect UUID paths to 404 or dashboard
+    const url = request.nextUrl.clone();
+    url.pathname = '/not-found';
+    return NextResponse.redirect(url);
+  }
+
   // Public routes
-  const publicRoutes = ['/', '/login', '/register', '/pricing'];
+  const publicRoutes = ['/', '/login', '/register', '/pricing', '/not-found'];
   const isPublicRoute = publicRoutes.includes(pathname);
 
   // Protected routes

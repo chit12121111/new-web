@@ -120,13 +120,15 @@ export default function StorePage() {
   const handlePurchase = async (template: Template) => {
     if (template.isPurchased) {
       // Navigate to generate page to use the template
-      router.push(`/dashboard/generate?template=${template.id}&type=${template.type.toLowerCase()}`);
+      const url = `/dashboard/generate?template=${encodeURIComponent(template.id)}&type=${encodeURIComponent(template.type.toLowerCase())}`;
+      router.push(url);
       return;
     }
 
     if (!template.isPaid || template.price === 0) {
       // Free template - navigate to generate page
-      router.push(`/dashboard/generate?template=${template.id}&type=${template.type.toLowerCase()}`);
+      const url = `/dashboard/generate?template=${encodeURIComponent(template.id)}&type=${encodeURIComponent(template.type.toLowerCase())}`;
+      router.push(url);
       return;
     }
 
@@ -643,7 +645,8 @@ export default function StorePage() {
                       try {
                         setViewingTemplate(null);
                         const type = viewingTemplate.type.toLowerCase();
-                        router.push(`/dashboard/generate?template=${viewingTemplate.id}&type=${type}`);
+                        const url = `/dashboard/generate?template=${encodeURIComponent(viewingTemplate.id)}&type=${encodeURIComponent(type)}`;
+                        router.push(url);
                       } catch (error) {
                         console.error('Error navigating to generate page:', error);
                         toast.error('Failed to navigate to generate page');

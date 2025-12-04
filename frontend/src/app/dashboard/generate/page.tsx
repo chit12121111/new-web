@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import { useLanguageStore } from '@/store/languageStore';
 import { aiApi, usersApi } from '@/lib/api';
@@ -17,6 +17,7 @@ export default function GeneratePage() {
   const { user, updateCredits } = useAuthStore();
   const { locale } = useLanguageStore();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [prompt, setPrompt] = useState('');
   const [generationType, setGenerationType] = useState<'image' | 'video'>('image');
   const [isGenerating, setIsGenerating] = useState(false);
@@ -52,22 +53,35 @@ export default function GeneratePage() {
     const templateId = searchParams.get('template');
     if (!templateId) return;
 
+    // Validate template ID is not empty and is a valid UUID format
+    if (!templateId || templateId.trim() === '') {
+      return;
+    }
+
     setLoadingTemplate(true);
     try {
       // Get all templates and find the one with matching ID
       const response = await usersApi.getStoreTemplates();
+      
+      if (!response?.data || !Array.isArray(response.data)) {
+        toast.error('Failed to load templates');
+        return;
+      }
+
       const template = response.data.find((t: any) => t.id === templateId);
       
       if (template) {
         // Set the template content as the prompt
         // Replace {{topic}} placeholder with empty string or keep it for user to fill
-        let templateContent = template.template;
+        let templateContent = template.template || '';
         // Optionally replace {{topic}} with empty string or placeholder
         templateContent = templateContent.replace(/\{\{topic\}\}/g, '');
         setPrompt(templateContent);
         toast.success('Template loaded!');
       } else {
         toast.error('Template not found');
+        // Optionally redirect to store page
+        router.push('/dashboard/store');
       }
     } catch (error: any) {
       console.error('Failed to load template:', error);
