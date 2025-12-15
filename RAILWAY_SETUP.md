@@ -145,9 +145,33 @@ Railway จะ auto-detect แต่ถ้าไม่:
 - ตรวจสอบ environment variables
 
 ### Database Connection Failed:
-- ตรวจสอบ `DATABASE_URL`
-- ตรวจสอบว่า database ทำงานอยู่
-- ใช้ connection pooling URL (สำหรับ Supabase)
+
+**Error: `Can't reach database server at postgres.railway.internal:5432`**
+
+ปัญหานี้เกิดจากการใช้ Railway internal hostname ซึ่งอาจไม่สามารถเข้าถึงได้
+
+**วิธีแก้ไข:**
+
+1. **ถ้าใช้ Railway PostgreSQL:**
+   - ไปที่ Railway project → **Variables** tab
+   - คัดลอก `DATABASE_URL` ที่ Railway สร้างให้ (ไม่ใช่ internal hostname)
+   - ควรมีรูปแบบ: `postgresql://postgres:[password]@[host].railway.app:[port]/railway`
+   - หรือ `postgresql://postgres:[password]@[host]:[port]/railway`
+
+2. **ถ้าใช้ Supabase:**
+   - ไปที่ Supabase project → **Settings** → **Database**
+   - คัดลอก **Connection string** (URI format)
+   - ควรมีรูปแบบ: `postgresql://postgres:[password]@db.[project-ref].supabase.co:5432/postgres?sslmode=require`
+   - **สำคัญ:** ต้องมี `?sslmode=require` สำหรับ Supabase
+
+3. **ตรวจสอบ DATABASE_URL:**
+   - ตรวจสอบว่าไม่มี `railway.internal` ใน hostname
+   - ตรวจสอบว่า format ถูกต้อง: `postgresql://user:password@host:port/database`
+   - สำหรับ Supabase ต้องมี `?sslmode=require` หรือ `?sslmode=prefer`
+
+4. **ตรวจสอบ logs:**
+   - ดู logs ใน Railway → **Deployments** tab
+   - ดูว่า DATABASE_URL ที่ใช้เป็นอะไร (จะแสดง hostname โดยไม่แสดง password)
 
 ### Application Crashed:
 - ตรวจสอบ logs
