@@ -85,6 +85,24 @@ export class AuthService {
       if (error instanceof UnauthorizedException) {
         throw error;
       }
+      
+      // Check for database connection errors
+      if (error?.message?.includes('Can\'t reach database server') || 
+          error?.message?.includes('railway.internal') ||
+          error?.code === 'P1001') {
+        console.error('');
+        console.error('❌ DATABASE CONNECTION ERROR');
+        console.error('   The application cannot connect to the database.');
+        console.error('');
+        console.error('🔧 FIX REQUIRED:');
+        console.error('   1. Go to Railway Dashboard → Your Project → Variables');
+        console.error('   2. Find and update DATABASE_URL');
+        console.error('   3. Replace railway.internal with public hostname');
+        console.error('   4. See RAILWAY_DATABASE_FIX.md for details');
+        console.error('');
+        throw new UnauthorizedException('Database connection failed. Please check server configuration.');
+      }
+      
       // Log and re-throw other errors (database, etc.)
       console.error('❌ Validate user error:', error);
       console.error('Error message:', error.message);
