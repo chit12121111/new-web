@@ -45,6 +45,8 @@ export default function UserDetailPage() {
       setUser(userData);
       setFormData({
         role: userData.role || '',
+        newPassword: '',
+        confirmPassword: '',
         seoCredits: userData.seoCredits?.toString() || '0',
         reelCredits: userData.reelCredits?.toString() || '0',
       });
