@@ -46,6 +46,35 @@ async function bootstrap() {
     console.log('✅ All required environment variables are set');
   }
 
+  // Check DATABASE_URL format
+  const dbUrl = process.env.DATABASE_URL;
+  if (dbUrl) {
+    try {
+      const url = new URL(dbUrl);
+      if (url.hostname.includes('railway.internal')) {
+        console.error('');
+        console.error('⚠️  ⚠️  ⚠️  CRITICAL WARNING ⚠️  ⚠️  ⚠️');
+        console.error('❌ DATABASE_URL is using Railway internal hostname (railway.internal)');
+        console.error('   This will NOT work! You need to use the public DATABASE_URL.');
+        console.error('');
+        console.error('🔧 How to fix:');
+        console.error('   1. Go to Railway Dashboard → Your Project → Variables');
+        console.error('   2. Find DATABASE_URL variable');
+        console.error('   3. Replace it with the public DATABASE_URL from Railway Variables');
+        console.error('      (Should look like: postgresql://postgres:...@[host].railway.app:.../railway)');
+        console.error('   4. Or use Supabase: postgresql://postgres:...@db.[ref].supabase.co:5432/postgres?sslmode=require');
+        console.error('');
+        console.error('📖 See RAILWAY_DATABASE_FIX.md for detailed instructions');
+        console.error('');
+      } else {
+        const hostInfo = `${url.protocol}//${url.username}@${url.hostname}:${url.port || '5432'}${url.pathname}`;
+        console.log(`🔗 DATABASE_URL: ${hostInfo}`);
+      }
+    } catch (e) {
+      console.warn('⚠️  Could not parse DATABASE_URL format');
+    }
+  }
+
   const app = await NestFactory.create(AppModule);
 
   // Enable CORS - Allow all origins for Ngrok/public access
