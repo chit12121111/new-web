@@ -7,6 +7,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { UsersService } from '../users/users.service';
 import { UserRole, ContentType } from '@prisma/client';
+import { NotificationService } from '../notifications/notification.service';
 import OpenAI from 'openai';
 import axios, { AxiosError } from 'axios';
 // Try to import @huggingface/inference if available
@@ -30,6 +31,7 @@ export class AiService {
   constructor(
     private prisma: PrismaService,
     private usersService: UsersService,
+    private notificationService: NotificationService,
   ) {
     console.log('✅ AI Service initialized - Using user-specific API keys');
   }
@@ -158,6 +160,14 @@ export class AiService {
             provider: usedProvider || (imageUrl.startsWith('data:') ? 'google-imagen' : 'openai-dalle'),
           },
         },
+      });
+
+      await this.notificationService.notifyImageGeneration({
+        userEmail: user.email,
+        prompt,
+        model: usedModel,
+        provider: usedProvider || 'unknown',
+        imageUrl,
       });
 
       return {

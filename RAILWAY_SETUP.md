@@ -76,6 +76,16 @@ PRO_PLAN_REEL_CREDITS=500
 TRYOUT_SEO_CREDITS=3
 TRYOUT_REEL_CREDITS=5
 TRYOUT_DURATION_DAYS=7
+
+# Notifications (optional)
+NOTIFY_ON_IMAGE_GENERATION=false
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=465
+EMAIL_USER=you@example.com
+EMAIL_PASS=app-password
+EMAIL_FROM=AI Content Pro <noreply@example.com>
+ALERT_EMAIL_TO=team@example.com
+DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/...
 ```
 
 ### 6. ตั้งค่า Build และ Start Commands

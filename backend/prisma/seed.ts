@@ -28,9 +28,10 @@ async function main() {
       monthlySeoCredits: 0,
       monthlyReelCredits: 0,
       features: JSON.stringify([
-        'Sample AI Generation',
-        'Limited Dashboard Access',
-        'Basic Support'
+        'Sample AI generation with watermark',
+        'Limited dashboard access',
+        'No downloads or API',
+        'Basic support'
       ]),
       sortOrder: 1,
     },
@@ -45,12 +46,11 @@ async function main() {
       monthlySeoCredits: 50,
       monthlyReelCredits: 100,
       features: JSON.stringify([
-        '50 SEO Articles per month',
-        '100 Reel Scripts per month',
-        'Full Dashboard Access',
-        'Content Library',
-        'Download & Copy',
-        'Priority Support'
+        'Full dashboard and content library',
+        '50 SEO articles per month',
+        '100 reel scripts per month',
+        'Download and copy exports',
+        'Email support'
       ]),
       sortOrder: 2,
     },
@@ -65,14 +65,13 @@ async function main() {
       monthlySeoCredits: 200,
       monthlyReelCredits: 500,
       features: JSON.stringify([
-        '200 SEO Articles per month',
-        '500 Reel Scripts per month',
-        'Full Dashboard Access',
-        'Unlimited Content Library',
-        'Advanced AI Settings',
-        'Custom Templates',
-        'API Access',
-        'Premium Support'
+        'Advanced AI settings and custom templates',
+        '200 SEO articles per month',
+        '500 reel scripts per month',
+        'Unlimited content library',
+        'API access and integrations',
+        'Priority support',
+        'Team sharing'
       ]),
       sortOrder: 3,
     },

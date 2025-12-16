@@ -3,10 +3,12 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { AiService } from './ai.service';
 import { AiController } from './ai.controller';
 import { UsersModule } from '../users/users.module';
+import { NotificationModule } from '../notifications/notification.module';
 
 @Module({
   imports: [
     UsersModule,
+    NotificationModule,
     ThrottlerModule.forRoot([
       {
         ttl: 60000, // 60 seconds

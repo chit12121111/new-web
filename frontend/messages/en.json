@@ -122,6 +122,36 @@
     "free": "Free",
     "select_plan": "Select Plan",
     "current_plan": "Current Plan",
+    "role_section_title": "Role-based access",
+    "role_section_subtitle": "See what each role gets before you pick a plan.",
+    "tryout_title": "Try-out (7 days)",
+    "tryout_desc": "Test workflows with limited credits and sample outputs.",
+    "tryout_points": [
+      "3 SEO articles + 5 reel scripts",
+      "Watermark/sample outputs; downloads disabled",
+      "No API/export; limited settings",
+      "Auto-expire after 7 days"
+    ],
+    "basic_title": "Basic",
+    "basic_desc": "For individuals shipping weekly content.",
+    "basic_points": [
+      "Full dashboard and content library",
+      "50 SEO / 100 reel credits monthly",
+      "Download and copy exports",
+      "Email support"
+    ],
+    "pro_title": "Pro",
+    "pro_desc": "For teams that need higher limits and controls.",
+    "pro_points": [
+      "200 SEO / 500 reel credits monthly",
+      "Advanced AI settings and custom templates",
+      "API access and integrations",
+      "Priority support and team sharing"
+    ],
+    "tryout_cta": "Start free try-out",
+    "basic_cta": "Choose Basic",
+    "pro_cta": "Choose Pro",
+    "cta_view_dashboard": "Go to dashboard",
     "faq": "Frequently Asked Questions",
     "faq1_q": "Can I cancel anytime?",
     "faq1_a": "Yes, you can cancel your subscription at any time. Your access will continue until the end of your current billing period.",

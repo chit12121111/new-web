@@ -5,13 +5,19 @@ import { adminApi } from '@/lib/api';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
+import Input from '@/components/ui/Input';
 import { formatDate } from '@/lib/utils';
+import toast from 'react-hot-toast';
+import { Copy } from 'lucide-react';
 
 export default function AdminWebhooksPage() {
   const [logs, setLogs] = useState<any[]>([]);
   const [pagination, setPagination] = useState<any>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
+  const [n8nUrl, setN8nUrl] = useState('');
+
+  const backendWebhookUrl = `${process.env.NEXT_PUBLIC_API_URL || ''}/payments/webhook`;
 
   useEffect(() => {
     fetchLogs(currentPage);
@@ -30,6 +36,15 @@ export default function AdminWebhooksPage() {
     }
   };
 
+  const handleCopy = async (value: string, label: string) => {
+    try {
+      await navigator.clipboard.writeText(value);
+      toast.success(`${label} copied`);
+    } catch (err) {
+      toast.error('Copy failed');
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -38,6 +53,80 @@ export default function AdminWebhooksPage() {
           Monitor Stripe webhook events
         </p>
       </div>
+
+      <Card className="space-y-4">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">Configure webhook endpoints</h2>
+            <p className="text-sm text-gray-600">
+              Add these URLs in Stripe Dashboard → Developers → Webhooks.
+            </p>
+          </div>
+          <Button
+            variant="primary"
+            onClick={() => {
+              window.open('https://dashboard.stripe.com/test/webhooks', '_blank');
+            }}
+          >
+            Open Stripe Webhooks
+          </Button>
+        </div>
+
+        <div className="grid gap-4 lg:grid-cols-2">
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-gray-800">Backend endpoint (verify signature)</p>
+            <div className="flex gap-2">
+              <Input value={backendWebhookUrl} readOnly />
+              <Button
+                variant="outline"
+                onClick={() => handleCopy(backendWebhookUrl, 'Backend endpoint')}
+              >
+                <Copy className="h-4 w-4" />
+              </Button>
+            </div>
+            <p className="text-xs text-gray-500">
+              Use this for the main Stripe webhook (verifies Stripe signature with STRIPE_WEBHOOK_SECRET).
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-gray-800">n8n webhook URL (optional)</p>
+            <div className="flex gap-2">
+              <Input
+                placeholder="https://your-n8n.webhook/..."
+                value={n8nUrl}
+                onChange={(e) => setN8nUrl(e.target.value)}
+              />
+              <Button
+                variant="outline"
+                onClick={() => {
+                  if (!n8nUrl) {
+                    toast.error('Please enter your n8n URL');
+                    return;
+                  }
+                  handleCopy(n8nUrl, 'n8n endpoint');
+                }}
+              >
+                <Copy className="h-4 w-4" />
+              </Button>
+            </div>
+            <p className="text-xs text-gray-500">
+              You can add a second endpoint in Stripe pointing to n8n for custom workflows.
+            </p>
+          </div>
+        </div>
+
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+          <p className="text-sm font-semibold text-gray-900">How to set up in Stripe</p>
+          <ol className="mt-2 text-sm text-gray-700 list-decimal list-inside space-y-1">
+            <li>Open Stripe Dashboard → Developers → Webhooks.</li>
+            <li>Click “Add endpoint” → paste the URL (backend or n8n).</li>
+            <li>Select events you need (e.g., invoice.paid, customer.subscription.updated).</li>
+            <li>Save and copy the Signing secret; set it in backend env (STRIPE_WEBHOOK_SECRET) if using backend endpoint.</li>
+            <li>Send a test event and check logs below.</li>
+          </ol>
+        </div>
+      </Card>
 
       <Card>
         {isLoading ? (
@@ -129,4 +218,3 @@ export default function AdminWebhooksPage() {
     </div>
   );
 }
-
