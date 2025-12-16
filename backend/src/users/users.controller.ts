@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Delete, Body, UseGuards, Param, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Put, Body, UseGuards, Param, BadRequestException } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -100,6 +100,74 @@ export class UsersController {
   @Post('become-creator')
   async becomeCreator(@CurrentUser() user: any) {
     return this.usersService.becomeCreator(user.id);
+  }
+
+  // Creator endpoints
+  @Get('creator/templates')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.CREATOR, UserRole.ADMIN)
+  async getMyTemplates(@CurrentUser() user: any) {
+    return this.usersService.getMyTemplates(user.id);
+  }
+
+  @Post('creator/templates')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.CREATOR, UserRole.ADMIN)
+  async createMyTemplate(
+    @CurrentUser() user: any,
+    @Body() data: {
+      type: string;
+      name: string;
+      template: string;
+      description?: string;
+      thumbnail?: string;
+      isPaid?: boolean;
+      price?: number;
+      priceType?: string;
+      category?: string;
+      tags?: string[];
+    },
+  ) {
+    return this.usersService.createMyTemplate(user.id, data);
+  }
+
+  @Put('creator/templates/:id')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.CREATOR, UserRole.ADMIN)
+  async updateMyTemplate(
+    @CurrentUser() user: any,
+    @Param('id') templateId: string,
+    @Body() data: {
+      name?: string;
+      template?: string;
+      description?: string;
+      thumbnail?: string;
+      isPaid?: boolean;
+      price?: number;
+      priceType?: string;
+      category?: string;
+      tags?: string[];
+      isActive?: boolean;
+    },
+  ) {
+    return this.usersService.updateMyTemplate(user.id, templateId, data);
+  }
+
+  @Delete('creator/templates/:id')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.CREATOR, UserRole.ADMIN)
+  async deleteMyTemplate(
+    @CurrentUser() user: any,
+    @Param('id') templateId: string,
+  ) {
+    return this.usersService.deleteMyTemplate(user.id, templateId);
+  }
+
+  @Get('creator/stats')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.CREATOR, UserRole.ADMIN)
+  async getMyTemplateStats(@CurrentUser() user: any) {
+    return this.usersService.getMyTemplateStats(user.id);
   }
 }
 

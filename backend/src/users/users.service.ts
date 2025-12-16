@@ -1147,5 +1147,146 @@ export class UsersService {
       data: { role: UserRole.CREATOR },
     });
   }
+
+  // Creator: Get my templates
+  async getMyTemplates(userId: string) {
+    // Note: We'll need to add creatorId field to AIPromptTemplate schema later
+    // For now, return empty array or all templates (temporary)
+    return this.prisma.aIPromptTemplate.findMany({
+      where: {
+        isActive: true,
+      },
+      include: {
+        _count: {
+          select: { purchases: true },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  // Creator: Create template
+  async createMyTemplate(
+    userId: string,
+    data: {
+      type: string;
+      name: string;
+      template: string;
+      description?: string;
+      thumbnail?: string;
+      isPaid?: boolean;
+      price?: number;
+      priceType?: string;
+      category?: string;
+      tags?: string[];
+    },
+  ) {
+    return this.prisma.aIPromptTemplate.create({
+      data: {
+        type: data.type as any,
+        name: data.name,
+        template: data.template,
+        description: data.description,
+        thumbnail: data.thumbnail,
+        isPaid: data.isPaid ?? false,
+        price: data.price ?? 0,
+        priceType: data.priceType ?? 'credits',
+        category: data.category,
+        tags: data.tags ?? [],
+        isActive: true,
+      },
+    });
+  }
+
+  // Creator: Update my template
+  async updateMyTemplate(
+    userId: string,
+    templateId: string,
+    data: {
+      name?: string;
+      template?: string;
+      description?: string;
+      thumbnail?: string;
+      isPaid?: boolean;
+      price?: number;
+      priceType?: string;
+      category?: string;
+      tags?: string[];
+      isActive?: boolean;
+    },
+  ) {
+    // TODO: Add creatorId check when schema is updated
+    const template = await this.prisma.aIPromptTemplate.findUnique({
+      where: { id: templateId },
+    });
+
+    if (!template) {
+      throw new NotFoundException('Template not found');
+    }
+
+    return this.prisma.aIPromptTemplate.update({
+      where: { id: templateId },
+      data,
+    });
+  }
+
+  // Creator: Delete my template
+  async deleteMyTemplate(userId: string, templateId: string) {
+    // TODO: Add creatorId check when schema is updated
+    const template = await this.prisma.aIPromptTemplate.findUnique({
+      where: { id: templateId },
+    });
+
+    if (!template) {
+      throw new NotFoundException('Template not found');
+    }
+
+    return this.prisma.aIPromptTemplate.delete({
+      where: { id: templateId },
+    });
+  }
+
+  // Creator: Get template stats
+  async getMyTemplateStats(userId: string) {
+    const templates = await this.prisma.aIPromptTemplate.findMany({
+      include: {
+        _count: {
+          select: { purchases: true },
+        },
+        purchases: {
+          select: {
+            price: true,
+            creditsUsed: true,
+            createdAt: true,
+          },
+        },
+      },
+    });
+
+    const totalTemplates = templates.length;
+    const totalPurchases = templates.reduce(
+      (sum, t) => sum + t._count.purchases,
+      0,
+    );
+    const totalRevenue = templates.reduce((sum, t) => {
+      const templateRevenue = t.purchases.reduce(
+        (pSum, p) => pSum + (p.price || 0),
+        0,
+      );
+      return sum + templateRevenue;
+    }, 0);
+
+    return {
+      totalTemplates,
+      totalPurchases,
+      totalRevenue,
+      templates: templates.map((t) => ({
+        id: t.id,
+        name: t.name,
+        purchases: t._count.purchases,
+        revenue: t.purchases.reduce((sum, p) => sum + (p.price || 0), 0),
+      })),
+    };
+  }
 }
 
