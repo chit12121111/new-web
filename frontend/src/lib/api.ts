@@ -130,6 +130,7 @@ export const usersApi = {
   getStoreTemplates: () => api.get('/users/templates/store'),
   purchaseTemplate: (templateId: string) => api.post(`/users/templates/${templateId}/purchase`),
   getPurchasedTemplates: () => api.get('/users/templates/purchased'),
+  becomeCreator: () => api.post('/users/become-creator'),
 };
 
 // Subscriptions API

@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ApiKeyType } from './dto/api-key.dto';
+import { UserRole } from '@prisma/client';
 
 @Injectable()
 export class UsersService {
@@ -1119,6 +1120,32 @@ export class UsersService {
     });
 
     return purchases.map((p) => p.template);
+  }
+
+  // Upgrade current user to CREATOR role
+  async becomeCreator(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, role: true },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (user.role === UserRole.CREATOR) {
+      throw new BadRequestException('You are already a creator');
+    }
+
+    // Optional business rule: prevent changing ADMIN to CREATOR via this endpoint
+    if (user.role === UserRole.ADMIN) {
+      throw new BadRequestException('Admin users cannot become creators via this endpoint');
+    }
+
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { role: UserRole.CREATOR },
+    });
   }
 }
 

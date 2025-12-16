@@ -96,5 +96,10 @@ export class UsersController {
   async getPurchasedTemplates(@CurrentUser() user: any) {
     return this.usersService.getPurchasedTemplates(user.id);
   }
+
+  @Post('become-creator')
+  async becomeCreator(@CurrentUser() user: any) {
+    return this.usersService.becomeCreator(user.id);
+  }
 }
 

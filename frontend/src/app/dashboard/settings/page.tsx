@@ -7,13 +7,13 @@ import Card from '@/components/ui/Card';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
-import { User, Shield, Bell, Key, CheckCircle, XCircle, Trash2 } from 'lucide-react';
+import { User, Shield, Bell, Key, CheckCircle, XCircle, Trash2, Star } from 'lucide-react';
 import { getRoleBadgeColor } from '@/lib/utils';
 import { usersApi } from '@/lib/api';
 import toast from 'react-hot-toast';
 
 export default function SettingsPage() {
-  const { user } = useAuthStore();
+  const { user, updateRole } = useAuthStore();
   const { locale } = useLanguageStore();
   const [formData, setFormData] = useState({
     firstName: user?.firstName || '',
@@ -57,6 +57,7 @@ export default function SettingsPage() {
     openai: false,
     huggingface: false,
   });
+  const [becomingCreator, setBecomingCreator] = useState(false);
 
   useEffect(() => {
     import(`../../../../messages/${locale}.json`).then((msgs) => {
@@ -161,6 +162,22 @@ export default function SettingsPage() {
     return value || key;
   };
 
+  const handleBecomeCreator = async () => {
+    if (!user) return;
+
+    setBecomingCreator(true);
+    try {
+      await usersApi.becomeCreator();
+      updateRole('CREATOR');
+      toast.success('คุณได้อัปเกรดเป็น Creator แล้ว');
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || 'Failed to become creator';
+      toast.error(errorMessage);
+    } finally {
+      setBecomingCreator(false);
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div>
@@ -218,6 +235,41 @@ export default function SettingsPage() {
           </Button>
         </div>
       </Card>
+
+      {/* Creator Program */}
+      {user && user.role !== 'CREATOR' && user.role !== 'ADMIN' && (
+        <Card>
+          <div className="flex items-center mb-6">
+            <Star className="h-6 w-6 text-yellow-500 mr-2" />
+            <h2 className="text-xl font-semibold text-gray-900">
+              Creator Program
+            </h2>
+          </div>
+
+          <div className="space-y-4">
+            <p className="text-gray-700">
+              สมัครเป็น Creator เพื่อสร้างและขาย prompt เจนรูปของคุณเองบนแพลตฟอร์ม
+              รับส่วนแบ่งรายได้ทุกครั้งที่มีคนซื้อผลงานของคุณ
+            </p>
+
+            <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
+              <li>สร้างและจัดการ prompt ของคุณเอง</li>
+              <li>ดูสถิติยอดดาวน์โหลดและยอดขาย</li>
+              <li>ผูกกับแผนสมาชิกที่คุณใช้อยู่ (Basic / Pro)</li>
+            </ul>
+
+            <Button
+              variant="primary"
+              className="mt-2"
+              onClick={handleBecomeCreator}
+              disabled={becomingCreator}
+              isLoading={becomingCreator}
+            >
+              สมัครเป็น Creator
+            </Button>
+          </div>
+        </Card>
+      )}
 
       {/* Security */}
       <Card>

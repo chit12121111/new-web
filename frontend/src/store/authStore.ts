@@ -25,6 +25,7 @@ interface AuthState {
   logout: () => Promise<void>;
   fetchUser: () => Promise<void>;
   updateCredits: (seoCredits: number, reelCredits: number) => void;
+  updateRole: (role: string) => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -107,6 +108,14 @@ export const useAuthStore = create<AuthState>((set) => ({
     set((state) => ({
       user: state.user
         ? { ...state.user, seoCredits, reelCredits }
+        : null,
+    }));
+  },
+
+  updateRole: (role: string) => {
+    set((state) => ({
+      user: state.user
+        ? { ...state.user, role }
         : null,
     }));
   },
